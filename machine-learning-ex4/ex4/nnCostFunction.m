@@ -62,30 +62,66 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+% augument X with ones on the left
+X = [ones(m, 1), X];
 
+% change y to matrix
+Y = zeros(m, num_labels);
+for i=1:m
+  Y(i, y(i)) = 1;
+end
 
+%% PART 1
 
+% compute cost function (without regularization)
+for i=1:m
+  a2 = sigmoid( Theta1 * X(i, :)' );
+  a3 = sigmoid( Theta2 * [1; a2] );
+  J += sum(-Y(i, :)' .* log(a3) - (1-Y(i, :))' .* log(1 - a3)) / m;
+end
 
+% regularize cost function
+theta1_reg = ( Theta1(:, 2:size(Theta1, 2)) ).^2;
+theta2_reg = ( Theta2(:, 2:size(Theta2, 2)) ).^2;
+J += (sum(sum(theta1_reg, 2), 1) + sum(sum(theta2_reg, 2), 1)) * lambda / 2 / m;
 
+% PART 2
 
+% backward propagation
+for i=1:m
+  % feed forward
+  a1 = X(i, 2:size(X, 2))';
+  z2 = Theta1 * [1; a1];
+  a2 = sigmoid(z2);
+  z3 = Theta2 * [1; a2];
+  a3 = sigmoid(z3);
+  % calculate deltas
+  d3 = a3 - Y(i, :)';
+  d2 = (Theta2' * d3)(2:end) .* sigmoidGradient(z2);
+  % accumulate
+  Theta1_grad += d2 * [1; a1]';
+  Theta2_grad += d3 * [1; a2]';
+end
 
+% normalize
+Theta1_grad = Theta1_grad ./ m;
+Theta2_grad = Theta2_grad ./ m;
 
+% PART 3
 
+% regularization Theta1
+Theta1_reg = Theta1 .* (lambda / m);
+Theta1_reg(:, 1) = zeros(size(Theta1_reg, 1), 1);
+Theta1_grad += Theta1_reg;
 
-
-
-
-
-
-
-
-
-% -------------------------------------------------------------
+% regularization Theta2
+Theta2_reg = Theta2 .* (lambda / m);
+Theta2_reg(:, 1) = zeros(size(Theta2_reg, 1), 1);
+Theta2_grad += Theta2_reg;
 
 % =========================================================================
 
 % Unroll gradients
 grad = [Theta1_grad(:) ; Theta2_grad(:)];
-
 
 end
